@@ -1,0 +1,22 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* table {
+  width: 90%;
+  border: 1px solid red;
+}
+
+thead {
+  background-color: aliceblue;
+}
+
+tbody {
+  background-color: aqua;
+  padding: 16px;
+} */
