@@ -1,35 +1,24 @@
 import "./styles.css";
 import TableComponent from "./TableComponent";
 import { styled } from "@mui/system";
-import { createTheme, ThemeProvider } from "@mui/material";
+import { ThemeProvider } from "@mui/material";
 import { orange } from "@mui/material/colors";
 import React, { useState, useCallback } from "react";
 import { Column } from "react-table";
+import theme from "./theme";
 
 export interface ApiRequest {
   data: Data[];
   totalPassengers: number;
   totalPages: number;
 }
-
+export interface RowState {
+  cellStates: { [key: string]: boolean };
+  isHighlighted: boolean;
+}
 export interface Data {
   [key: string]: any;
 }
-
-const theme = createTheme({
-  // status: {
-  //   danger: orange[500],
-  // },
-  components: {
-    MuiTable: {
-      styleOverrides: {
-        root: {
-          // backgroundColor: orange[50],
-        },
-      },
-    },
-  },
-});
 
 const TableWrapper = styled("div")({
   width: "100%",
@@ -43,23 +32,23 @@ export default function App() {
   const [apiPage, setApiPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const [selectedRows, setSelectedRows] = useState([]);
-  const [highlightedRow, setHighlightedRow] = useState<number | undefined>();
-
-  console.log(selectedRows);
 
   const columns = React.useMemo<Column<Data>[]>(
     () => [
       {
         Header: "id",
         accessor: "_id",
+        maxWidth: 50,
       },
       {
         Header: "Name",
         accessor: "name",
+        maxWidth: 50,
       },
       {
         Header: "Trips",
         accessor: "trips",
+        maxWidth: 50,
       },
     ],
     []
@@ -82,27 +71,47 @@ export default function App() {
 
   const getCellProps = (cell: any) => {
     // returns the props for the cell
+    console.log(cell);
+    const isSelectionRow = cell.column.id === "selection";
     return {
-      style: {
-        // backgroundColor: cell.value === "Pedro" ? orange[50] : "",
+      style: {},
+      padding: isSelectionRow ? "checkbox" : "none",
+      sx: {
+        maxWidth: cell.column.maxWidth,
+      },
+    };
+  };
+
+  const getCellHeaderProps = (column: any) => {
+    // returns the props for the cell
+    const isSelectionRow = column.id === "selection";
+    return {
+      style: {},
+      padding: isSelectionRow ? "checkbox" : "none",
+      sx: {
+        maxWidth: column.maxWidth,
       },
     };
   };
 
   const getRowProps = (row: any) => {
     // returns an object with the props you want to pass to the row
-    const isHighlighted = highlightedRow === row.index;
     return {
       style: {
         cursor: "pointer",
-        backgroundColor: row.isSelected || isHighlighted ? orange[500] : "",
+        backgroundColor: row.isSelected
+          ? orange[500]
+          : row.state.isHighlighted
+          ? orange[50]
+          : "",
       },
       onClick: () => {
-        if (isHighlighted) {
-          setHighlightedRow(undefined);
-        } else {
-          setHighlightedRow(row.index);
-        }
+        row.setState((prev: RowState) => {
+          return {
+            ...prev,
+            isHighlighted: !prev.isHighlighted,
+          };
+        });
       },
     };
   };
@@ -122,12 +131,12 @@ export default function App() {
               columns={columns}
               data={data}
               setSelectedRowCallback={setSelectedRowCallback}
-              setHighlightedRow={setHighlightedRow}
               apiPage={apiPage}
               pageSize={pageSize}
               setApiPage={setApiPage}
               setPageSize={setPageSize}
               getCellProps={getCellProps}
+              getCellHeaderProps={getCellHeaderProps}
               getRowProps={getRowProps}
             />
           )}

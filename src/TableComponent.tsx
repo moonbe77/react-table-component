@@ -1,5 +1,12 @@
 import React, { useEffect } from "react";
-import { Column, useTable, usePagination, useRowSelect } from "react-table";
+import {
+  Column,
+  useTable,
+  usePagination,
+  useRowSelect,
+  useSortBy,
+  useRowState,
+} from "react-table";
 import { Data, ApiRequest } from "./App";
 import {
   TableFooter,
@@ -11,6 +18,7 @@ import {
   TableContainer,
   TablePagination,
   Checkbox,
+  TableSortLabel,
 } from "@mui/material";
 import TablePaginationActions from "./TablePaginationActions";
 
@@ -19,9 +27,13 @@ interface Props {
   apiPage: number;
   pageSize: number;
   columns: Column<Data>[];
-  setHighlightedRow: (id: number | undefined) => void;
+
   setSelectedRowCallback: (selectedRows: Data[]) => void;
   getCellProps: (cell: Column<Data>) => {
+    style?: React.CSSProperties;
+    onClick?: (event: React.MouseEvent<HTMLTableCellElement>) => void;
+  };
+  getCellHeaderProps: (cell: Column<Data>) => {
     style?: React.CSSProperties;
     onClick?: (event: React.MouseEvent<HTMLTableCellElement>) => void;
   };
@@ -38,13 +50,13 @@ const TableComponent = (props: Props) => {
   const {
     columns,
     data,
-    setHighlightedRow,
     setSelectedRowCallback,
     apiPage,
     pageSize,
     setApiPage,
     setPageSize,
     getCellProps,
+    getCellHeaderProps,
     getRowProps,
   } = props;
   const memoData = React.useMemo(() => data.data, [data]);
@@ -56,12 +68,16 @@ const TableComponent = (props: Props) => {
       pageCount: data.totalPages,
       manualPagination: true,
     },
+    useRowState,
+    useSortBy,
     usePagination,
     useRowSelect,
     (hooks) => {
       hooks.visibleColumns.push((columns) => [
         {
           id: "selection",
+          disableSortBy: true,
+          maxWidth: 50,
           Header: ({ getToggleAllRowsSelectedProps }) => {
             return (
               <Checkbox
@@ -71,18 +87,22 @@ const TableComponent = (props: Props) => {
               />
             );
           },
-          Cell: ({ row }) => (
-            <Checkbox
-              // checked={row.getToggleRowSelectedProps().checked}
-              {...row.getToggleRowSelectedProps()}
-              title="Select row"
-            />
-          ),
+          Cell: ({ row }) => {
+            return (
+              <Checkbox
+                // checked={row.getToggleRowSelectedProps().checked}
+                {...row.getToggleRowSelectedProps()}
+                title="Select row"
+              />
+            );
+          },
         },
         ...columns,
         {
           id: "actions",
           Header: "Actions",
+          disableSortBy: true,
+          maxWidth: 50,
           Cell: ({ row }) => {
             return <div>Actions</div>;
           },
@@ -105,7 +125,6 @@ const TableComponent = (props: Props) => {
     event: React.MouseEvent<HTMLButtonElement> | null,
     page: any
   ) => {
-    setHighlightedRow(undefined);
     setApiPage(page);
   };
 
@@ -131,11 +150,29 @@ const TableComponent = (props: Props) => {
         <TableHead>
           {headerGroups.map((headerGroup) => (
             <TableRow {...headerGroup.getHeaderGroupProps()}>
-              {headerGroup.headers.map((column) => (
-                <TableCell {...column.getHeaderProps()}>
-                  {column.render("Header")}
-                </TableCell>
-              ))}
+              {headerGroup.headers.map((column) => {
+                return (
+                  <TableCell
+                    {...column.getHeaderProps([
+                      column.getSortByToggleProps(),
+                      getCellHeaderProps(column),
+                    ])}
+                  >
+                    {column.render("Header")}
+                    <TableSortLabel
+                      active={column.isSorted}
+                      hideSortIcon={column.disableSortBy}
+                      direction={
+                        column.isSorted
+                          ? column.isSortedDesc
+                            ? "desc"
+                            : "asc"
+                          : "asc"
+                      }
+                    />
+                  </TableCell>
+                );
+              })}
             </TableRow>
           ))}
         </TableHead>
